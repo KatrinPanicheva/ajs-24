@@ -7,16 +7,59 @@ const kohde = document.querySelector('tbody');
 const modaali = document.querySelector('dialog');
 const info = document.querySelector('#info');
 const closeModal = document.querySelector('#close-modal');
+const sodexoBtn = document.querySelector('#sodexo');
+const compassBtn = document.querySelector('#compass');
+const resetBtn = document.querySelector('#reset');
 
+
+
+//nappi kiinni
 closeModal.addEventListener('click', () => {
   modaali.close();
 });
 
+//listan tekeminen
+const haeRavintolat = async () => {
+  return await fetchData(apiURL + '/api/v1/restaurants');
+};
 
-const teeRavintolaLista = async () => {
-  const restaurants = await fetchData(apiURL + '/api/v1/restaurants');
+const teeRavintolaLista = async (restaurants) => {
+  kohde.innerHTML = '';
 
-  // your code here
+  //sodexo nappi ja painaus
+  sodexoBtn.addEventListener('click', () => {
+    const filteredRestaurants = restaurants.filter((restaurant)=>{
+      if(restaurant.company === 'Sodexo'){
+        return true;
+      }
+    });
+    teeRavintolaLista(filteredRestaurants);
+  });
+
+  //compass nappi ja painaus
+  compassBtn.addEventListener('click', () => {
+    const filteredRestaurants = restaurants.filter((restaurant) =>{
+      if(restaurant.company === 'Compass Group'){
+        return true;
+      }
+    });
+    teeRavintolaLista(filteredRestaurants)
+  });
+
+
+
+    //reset nappi
+    resetBtn.addEventListener('click', () => {
+      const filteredRestaurants = restaurants.filter((restaurant) =>{
+        if(restaurant.company === 'reset'){
+          return true;
+        }
+      });
+      teeRavintolaLista(filteredRestaurants)
+    });
+
+
+
 
   //aakkosjärjestys
   restaurants.sort((a, b) => a.name.localeCompare(b.name));
@@ -55,4 +98,6 @@ const teeRavintolaLista = async () => {
   });
 };
 
-teeRavintolaLista();
+
+const raflat = await haeRavintolat();
+teeRavintolaLista(raflat);
