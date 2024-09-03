@@ -22,18 +22,18 @@ const teeRavintolaLista = async () => {
   restaurants.sort((a, b) => a.name.localeCompare(b.name));
 
   //ravintolat käydään läpi
-  for (const restaurant of restaurants) {
+  restaurants.forEach((restaurant) => {
     if (restaurant) {
       const {_id} = restaurant;
 
       //ravintola rivin html rivi
       const rivi = restaurantRow(restaurant);
 
-      rivi.addEventListener('click', async () => {
+        rivi.addEventListener('click', async () => {
         const korostetut = document.querySelectorAll('.highlight');
-        for (const korostettu of korostetut) {
+        korostetut.forEach ((korostettu) => {
           korostettu.classList.remove('highlight');
-        }
+        });
 
         rivi.classList.add('highlight');
         // hae päivän ruokalista
@@ -48,13 +48,11 @@ const teeRavintolaLista = async () => {
         info.insertAdjacentHTML('beforeend', ravintolaHTML);
 
         modaali.showModal();
-
-
       });
 
       kohde.append(rivi);
     }
-  }
+  });
 };
 
 teeRavintolaLista();
