@@ -41,3 +41,9 @@ dialog > div:first-child button {
   border: none;
   font-size: 2rem;
 }
+
+
+h1{
+  display: flex;
+  justify-content: center;
+}
