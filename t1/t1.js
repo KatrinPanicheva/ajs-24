@@ -1,5 +1,26 @@
 'use strict';
 
+// Alusta kartta
+const map = L.map('map').setView([60.1699, 24.9384], 13); // Aseta alkuperäinen sijainti esim. Helsingin koordinaatteihin
+
+// Lisää OpenStreetMap laatat
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+}).addTo(map);
+
+let restaurants = []; // Määritellään tyhjät ravintolat
+
+const showRestaurantsOnMap = () => {
+  restaurants.forEach((restaurant) => {
+      const lat = restaurant.location.coordinates[1];
+      const lng = restaurant.location.coordinates[0];
+      const marker = L.marker([lat, lng]).addTo(map);
+
+      // Lisää popup-ikkuna, joka näyttää ravintolan nimen ja osoitteen
+      marker.bindPopup(`<b>${restaurant.name}</b><br>${restaurant.address}`).openPopup();
+  });
+};
+
 const restaurantRow = (restaurant) => {
     const { name, address, company } = restaurant;
     const tr = document.createElement('tr');
@@ -76,14 +97,18 @@ modal.addEventListener('click', () => {
 
 const calculateDistance = (x1, y1, x2, y2) => Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
 
-const createTable = (restaurants) => {
+const createTable = () => {
     const table = document.querySelector('table tbody');
     if (!table) {
         console.log('Table is missing in HTML');
         return;
     }
     table.innerHTML = '';
-
+    map.eachLayer((layer) => {
+      if (layer instanceof L.Marker) {
+          map.removeLayer(layer); // Poista vanhat karttamerkinnät
+      }
+  });
     // Järjestä ravintolat aakkosjärjestykseen
     restaurants.sort((a, b) => a.name.localeCompare(b.name));
 
@@ -105,6 +130,9 @@ const createTable = (restaurants) => {
             }
         });
     });
+
+    // Näytetään ravintolat kartalla
+    showRestaurantsOnMap();
 };
 
 const error = (err) => {
@@ -114,7 +142,7 @@ const error = (err) => {
 const success = async (pos) => {
     try {
         const crd = pos.coords;
-        let restaurants = await fetchData(apiUrl + '/restaurants');
+        restaurants = await fetchData(apiUrl + '/restaurants'); // Ladataan ravintolat ja tallennetaan muuttujaan
 
         // Järjestä etäisyyden mukaan
         restaurants.sort((a, b) => {
@@ -126,7 +154,7 @@ const success = async (pos) => {
         });
 
         // Näytetään taulukko ravintoloista (päivän listalla oletuksena)
-        createTable(restaurants);
+        createTable();
 
         // Nappien käsittely
         const dailyBtn = document.querySelector('#daily');
@@ -135,8 +163,8 @@ const success = async (pos) => {
         const compassBtn = document.querySelector('#compass');
         const resetBtn = document.querySelector('#reset');
 
-        dailyBtn.addEventListener('click', () => createTable(restaurants));
-        weeklyBtn.addEventListener('click', () => createTable(restaurants)); // Menu haetaan ravintolan klikkauksen yhteydessä
+        dailyBtn.addEventListener('click', () => createTable());
+        weeklyBtn.addEventListener('click', () => createTable()); // Menu haetaan ravintolan klikkauksen yhteydessä
 
         sodexoBtn.addEventListener('click', () => {
             const sodexoRestaurants = restaurants.filter((restaurant) => restaurant.company === 'Sodexo');
@@ -148,7 +176,7 @@ const success = async (pos) => {
             createTable(compassRestaurants);
         });
 
-        resetBtn.addEventListener('click', () => createTable(restaurants));
+        resetBtn.addEventListener('click', () => createTable());
 
     } catch (error) {
         modal.innerHTML = errorModal(error.message);
