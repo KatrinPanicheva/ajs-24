@@ -1,108 +1,159 @@
 'use strict';
-import {restaurantModal, restaurantRow} from './components.js';
-import {fetchData} from './fetchData.js';
-import {apiURL} from './variables.js';
 
-const kohde = document.querySelector('tbody');
-const modaali = document.querySelector('dialog');
-const info = document.querySelector('#info');
-const closeModal = document.querySelector('#close-modal');
-const sodexoBTN = document.querySelector('#sodexo');
-const compassBTN = document.querySelector('#compass');
-const resetBTN = document.querySelector('#reset');
-
-// kaikki ravintolat tänne
-let raflat = [];
-
-closeModal.addEventListener('click', () => {
-  modaali.close();
-});
-
-const haeRavintolat = async () => {
-  return await fetchData(apiURL + '/api/v1/restaurants');
+const restaurantRow = (restaurant) => {
+    const { name, address, company } = restaurant;
+    const tr = document.createElement('tr');
+    const nameCell = document.createElement('td');
+    nameCell.innerText = name;
+    const addressCell = document.createElement('td');
+    addressCell.innerText = address;
+    const companyCell = document.createElement('td');
+    companyCell.innerText = company;
+    tr.appendChild(nameCell);
+    tr.appendChild(addressCell);
+    tr.appendChild(companyCell);
+    return tr;
 };
 
-
-const teeRavintolaLista = async (restaurants) => {
-  try {
-    // testaa globaali raflat
-    console.log(raflat);
-
-    kohde.innerHTML = '';
-    // filteröinti ************************
-
-    sodexoBTN.addEventListener('click', () => {
-      const filteredRestaurants = restaurants.filter(
-        (restaurant) => restaurant.company === 'Sodexo'
-      );
-      teeRavintolaLista(filteredRestaurants);
+const restaurantModal = (restaurant, menu) => {
+    const { name, address, city, postalCode, phone, company } = restaurant;
+    let html = `<h3>${name}</h3>
+    <p>${company}</p>
+    <p>${address} ${postalCode} ${city}</p>
+    <p>${phone}</p>
+    <table>
+      <tr>
+        <th>Course</th>
+        <th>Diet</th>
+        <th>Price</th>
+      </tr>
+    `;
+    menu.courses.forEach((course) => {
+        const { name, diets, price } = course;
+        html += `
+          <tr>
+            <td>${name}</td>
+            <td>${diets ?? ' - '}</td>
+            <td>${price ?? ' - '}</td>
+          </tr>
+          `;
     });
+    html += '</table>';
+    return html;
+};
 
+const errorModal = (message) => {
+    const html = `
+        <h3>Error</h3>
+        <p>${message}</p>
+        `;
+    return html;
+};
 
-    compassBTN.addEventListener('click', ()  => {
-      const filteredRestaurants = restaurants.filter(
-        (restaurant) => restaurant.company === 'Compass Group'
-      );
-      teeRavintolaLista(filteredRestaurants)
-    });
+const fetchData = async (url, options = {}) => {
+    const response = await fetch(url, options);
+    if (!response.ok) {
+        throw new Error(`Error ${response.status} occurred`);
+    }
+    const json = await response.json();
+    return json;
+};
 
+const apiUrl = 'https://media1.edu.metropolia.fi/restaurant/api/v1';
+const positionOptions = {
+    enableHighAccuracy: true,
+    timeout: 5000,
+    maximumAge: 0,
+};
 
+const modal = document.querySelector('dialog');
+if (!modal) {
+    throw new Error('Modal not found');
+}
+modal.addEventListener('click', () => {
+    modal.close();
+});
 
-    resetBTN.addEventListener('click', () => {
-      teeRavintolaLista(raflat)
-    })
-    // *************************************
+const calculateDistance = (x1, y1, x2, y2) => Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
 
+const createTable = (restaurants) => {
+    const table = document.querySelector('table tbody');
+    if (!table) {
+        console.log('Table is missing in HTML');
+        return;
+    }
+    table.innerHTML = '';
+
+    // Järjestä ravintolat aakkosjärjestykseen
     restaurants.sort((a, b) => a.name.localeCompare(b.name));
 
     restaurants.forEach((restaurant) => {
-      if (restaurant) {
-        const {_id} = restaurant;
+        const tr = restaurantRow(restaurant);
+        table.appendChild(tr);
 
-        // ravintolan HTML rivi
-        const rivi = restaurantRow(restaurant);
-
-        rivi.addEventListener('click', async () => {
-          try {
-            modaali.showModal();
-            info.innerHTML = '<div>Ladataa...</div>';
-
-            const korostetut = document.querySelectorAll('.highlight');
-            korostetut.forEach((korostettu) => {
-              korostettu.classList.remove('highlight');
-            });
-
-            rivi.classList.add('highlight');
-
-            // hae päivän ruokalista
-            const paivanLista = await fetchData(
-              apiURL + `/api/v1/restaurants/daily/${_id}/fi`
-            );
-
-            console.log('päivan lista', paivanLista.courses);
-            // tulosta päivän ruokalista
-            const ravintolaHTML = restaurantModal(
-              restaurant,
-              paivanLista.courses
-            );
-            info.innerHTML = '';
-            info.insertAdjacentHTML('beforeend', ravintolaHTML);
-          } catch (error) {
-            console.log(error);
-          }
+        // Ladataan valikko vasta, kun ravintola klikataan
+        tr.addEventListener('click', async () => {
+            try {
+                modal.innerHTML = '';
+                const menu = await fetchData(apiUrl + `/restaurants/daily/${restaurant._id}/fi`);
+                const menuHtml = restaurantModal(restaurant, menu);
+                modal.insertAdjacentHTML('beforeend', menuHtml);
+                modal.showModal();
+            } catch (error) {
+                modal.innerHTML = errorModal(error.message);
+                modal.showModal();
+            }
         });
-
-        kohde.append(rivi);
-      }
     });
-  } catch (error) {
-    console.log(error);
-  }
 };
 
-try {
-  raflat = await haeRavintolat();
-  teeRavintolaLista(raflat);
-} catch (error) {
-  console.log(error);
-}
+const error = (err) => {
+    console.warn(`ERROR(${err.code}): ${err.message}`);
+};
+
+const success = async (pos) => {
+    try {
+        const crd = pos.coords;
+        let restaurants = await fetchData(apiUrl + '/restaurants');
+
+        // Järjestä etäisyyden mukaan
+        restaurants.sort((a, b) => {
+            const x1 = crd.latitude;
+            const y1 = crd.longitude;
+            const distanceA = calculateDistance(x1, y1, a.location.coordinates[1], a.location.coordinates[0]);
+            const distanceB = calculateDistance(x1, y1, b.location.coordinates[1], b.location.coordinates[0]);
+            return distanceA - distanceB;
+        });
+
+        // Näytetään taulukko ravintoloista (päivän listalla oletuksena)
+        createTable(restaurants);
+
+        // Nappien käsittely
+        const dailyBtn = document.querySelector('#daily');
+        const weeklyBtn = document.querySelector('#weekly');
+        const sodexoBtn = document.querySelector('#sodexo');
+        const compassBtn = document.querySelector('#compass');
+        const resetBtn = document.querySelector('#reset');
+
+        dailyBtn.addEventListener('click', () => createTable(restaurants));
+        weeklyBtn.addEventListener('click', () => createTable(restaurants)); // Menu haetaan ravintolan klikkauksen yhteydessä
+
+        sodexoBtn.addEventListener('click', () => {
+            const sodexoRestaurants = restaurants.filter((restaurant) => restaurant.company === 'Sodexo');
+            createTable(sodexoRestaurants);
+        });
+
+        compassBtn.addEventListener('click', () => {
+            const compassRestaurants = restaurants.filter((restaurant) => restaurant.company === 'Compass Group');
+            createTable(compassRestaurants);
+        });
+
+        resetBtn.addEventListener('click', () => createTable(restaurants));
+
+    } catch (error) {
+        modal.innerHTML = errorModal(error.message);
+        modal.showModal();
+    }
+};
+
+navigator.geolocation.getCurrentPosition(success, error, positionOptions);

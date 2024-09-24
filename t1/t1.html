@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
+  <title>Restaurants</title>
   <link rel="stylesheet" href="t1.css">
   <script src="t1.js" type="module"></script>
 </head>
@@ -12,29 +12,40 @@
 <body>
   <h1>Restaurants</h1>
   <section>
-    <button id="sodexo">Sodexo</button>
-    <button id="compass">Compass Group</button>
-    <button id="reset">Reset</button>
+    <button id="sodexo" class="menu-btn">Sodexo</button>
+    <button id="compass" class="menu-btn">Compass Group</button>
+    <button id="reset" class="menu-btn">Reset</button>
+    <button id="daily" class="menu-btn">Daily Menu</button>
+    <button id="weekly" class="menu-btn">Weekly Menu</button>
+    <button id="calendar-btn" class="menu-btn">Select Day (Calendar)</button> <!-- Kalenteripainike -->
   </section>
   <table>
     <thead>
       <tr>
         <th>Name</th>
         <th>Company</th>
-        <th>Adress</th>
+        <th>Address</th>
       </tr>
     </thead>
     <tbody>
-      <!-- add restaurants here -->
+      <!-- Restaurants added here -->
     </tbody>
   </table>
-  <!-- modal -->
-  <dialog>
+
+  <!-- Modal for calendar selection -->
+  <dialog id="calendar-modal">
+    <input type="date" id="calendar-input">
+    <button id="calendar-submit">Select</button>
+    <button id="close-calendar-modal">Close</button>
+  </dialog>
+
+  <!-- Modal for restaurant details -->
+  <dialog id="restaurant-modal">
     <div>
       <button id="close-modal">&#215;</button>
     </div>
     <div id="info">
-      <!-- add restaurant info here when restaurant is clicked -->
+      <!-- Restaurant info added here when clicked -->
     </div>
   </dialog>
 </body>

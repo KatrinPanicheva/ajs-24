@@ -17,7 +17,7 @@ th {
   border-bottom: 1px solid #ccc;
   font-weight: normal;
   padding: 0.5em 1em;
-  text-align: left;
+  text-align: center;
 }
 
 td {
@@ -46,4 +46,69 @@ dialog > div:first-child button {
 h1{
   display: flex;
   justify-content: center;
+}
+
+
+section{
+  display: grid;
+  align-content: center;
+  justify-content: center;
+}
+
+tbody{
+  justify-content: center;
+
+}
+
+
+
+
+
+
+/* General table styling */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  border: 1px solid black;
+  padding: 8px;
+  text-align: left;
+}
+
+/* Modal styles */
+dialog {
+  width: 80%;
+  margin: auto;
+  padding: 20px;
+}
+
+#calendar-modal {
+  width: 30%;
+}
+
+button {
+  margin: 10px;
+}
+
+/* Highlight selected button */
+.menu-btn.selected {
+  background-color: #d4d4d4; /* Light gray to highlight */
+  font-weight: bold;
+}
+
+/* Weekday headers */
+.weekday-header {
+  font-weight: bold;
+  font-size: 1.2em;
+  margin-top: 20px;
+}
+
+/* Menu date display */
+.menu-date {
+  font-size: 1.1em;
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #333;
 }
